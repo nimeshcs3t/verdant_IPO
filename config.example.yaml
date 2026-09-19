@@ -1,0 +1,56 @@
+# Copy to config.yaml and fill in what you use. Everything is optional except db_path.
+db_path: data/ipo_radar.db
+anchor_tiers_file: data/anchor_tiers.yaml
+anthropic_api_key: ""          # optional: 150-word summaries of interview transcripts
+
+sources:
+  enabled:
+    sebi: true                 # DRHP / RHP filings (mainboard) — primary source
+    stockscans: true           # lists, filings, anchor book, financials, historical returns
+    nse: true                  # live issue calendar incl. NSE Emerge SME
+    chittorgarh: true          # anchor investor names + SME anchor league (needs playwright)
+    ipoji: false               # fill-in source; enable after checking its URLs below
+  min_interval_sec: 1.5        # politeness delay per host
+  cache_dir: data/cache
+  cache_ttl_sec: 600
+  chittorgarh_urls: {}         # override any URL in sources/chittorgarh.py DEFAULT_URLS
+  ipoji_urls: {}
+
+detail_days_after_listing: 45  # keep refreshing detail pages this long after listing
+
+scoring:
+  weights: {growth: 20, profitability: 20, balance_sheet: 15, cash_conversion: 15,
+            issue_structure: 15, valuation: 15}
+  sme_frequent_min_ipos: 15    # anchors in >= this many SME books/yr are treated as low-signal
+
+returns:
+  benchmark: "^CRSLDX"         # Nifty 500 on Yahoo Finance
+  years: [2025, 2026]          # compute returns for IPOs listed in these years
+
+youtube:
+  enabled: true
+  api_key: ""                  # YouTube Data API v3 key; blank = use yt-dlp search
+  ipos_per_run: 8
+  max_per_query: 5
+  llm_model: claude-sonnet-5
+
+alerts:
+  segments: [MAINBOARD, SME]
+  watchlist: []                # slugs that always alert, e.g. [hero-motors]
+  filing_lookback_days: 7
+  unlock_lead_days: [7, 1, 0]  # alert 7 days before, the day before, and on the day
+  min_unlock_pct: 1.0          # ignore unlocks smaller than this % of equity
+
+channels:
+  console: true
+  telegram:
+    bot_token: "8517405753:AAH2_KyV8Vwgs1RdkpE8owDsLW9DbD9SX2g"              # from @BotFather
+    chat_id: "6770625778"                # your user id or a channel like @my_ipo_alerts
+  webhooks: []                 # Discord / Slack incoming-webhook URLs
+  email:
+    smtp_host: ""              # smtp.gmail.com
+    smtp_port: 587
+    user: ""
+    password: ""               # Gmail: use an app password
+    to: ""
+    min_priority: 1            # 0 = everything incl. videos, 2 = only urgent

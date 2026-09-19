@@ -1,0 +1,131 @@
+# Anchor investor tiers used by the anchor-book quality score.
+# Matching is case-insensitive substring on the investor name as printed in the
+# anchor allocation list, so "sbi mutual fund" matches "SBI Mutual Fund - SBI Small Cap Fund".
+# Edit freely: this is opinion, not regulation.
+
+tier1_domestic:   # large, research-driven domestic long-only money
+  - sbi mutual fund
+  - hdfc mutual fund
+  - icici prudential mutual fund
+  - nippon life india
+  - kotak mahindra mutual fund
+  - kotak mutual fund
+  - axis mutual fund
+  - aditya birla sun life mutual fund
+  - mirae asset
+  - uti mutual fund
+  - dsp mutual fund
+  - franklin templeton
+  - tata mutual fund
+  - motilal oswal mutual fund
+  - canara robeco
+  - invesco india
+  - bandhan mutual fund
+  - hsbc mutual fund
+  - whiteoak capital mutual fund
+  - quant mutual fund
+  - 360 one mutual fund
+  - edelweiss mutual fund
+  - sundaram mutual fund
+  - life insurance corporation
+  - sbi life insurance
+  - hdfc life insurance
+  - icici prudential life
+  - max life insurance
+  - axis max life
+  - bajaj allianz life
+  - bajaj life
+  - tata aia life
+  - kotak mahindra life
+  - icici lombard
+  - general insurance corporation
+  - new india assurance
+  - employees provident fund
+  - nps trust
+
+tier1_global:     # sovereign wealth, pensions and large global long-only funds
+  - government of singapore
+  - monetary authority of singapore
+  - abu dhabi investment authority
+  - kuwait investment authority
+  - qatar investment authority
+  - government pension fund global
+  - norges bank
+  - smallcap world fund
+  - capital group
+  - fidelity
+  - nomura
+  - goldman sachs
+  - morgan stanley
+  - blackrock
+  - jupiter
+  - t. rowe price
+  - t rowe price
+  - schroder
+  - aberdeen
+  - amundi
+  - hsbc global investment
+  - ashoka india
+  - amansa
+  - steadview
+  - nalanda
+  - eastspring
+  - ontario teachers
+  - canada pension plan
+  - cpp investment
+  - caisse de depot
+  - temasek
+
+tier2:            # credible but more trading-oriented or smaller
+  - societe generale
+  - bnp paribas arbitrage
+  - citigroup global markets
+  - bofa securities
+  - copthall mauritius
+  - jm financial
+  - 3p india equity
+  - carnelian
+  - helios
+  - trust mutual fund
+  - samco mutual fund
+  - iti mutual fund
+  - union mutual fund
+  - baroda bnp paribas
+  - mahindra manulife
+  - pgim india
+  - bajaj finserv mutual fund
+  - lic mutual fund
+  - groww mutual fund
+  - old bridge mutual fund
+  - abakkus
+  - alchemy
+  - valuequest
+  - negen capital
+
+# Names reported (Moneycontrol / Business Today citing Prime Database; Chittorgarh
+# anchor league tables) to appear in dozens of SME anchor books every year. Their
+# presence carries little independent signal about the company. Not an allegation.
+sme_frequent:
+  - rajasthan global securities
+  - nav capital
+  - saint capital
+  - finavenue
+  - craft emerging market
+  - meru investment
+  - persistent growth fund
+  - varsu india
+  - vikasa
+  - chhattisgarh investments
+  - lrsd securities
+  - negen undiscovered value
+  - moneywise financial
+  - bengal finance
+  - astorne capital
+  - authum investment
+  - zinnia global fund
+  - minerva ventures fund
+  - holani venture
+  - ebisu global
+  - resonance opportunities fund
+  - kifs dealer
+  - leading light fund

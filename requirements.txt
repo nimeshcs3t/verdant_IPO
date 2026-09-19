@@ -1,0 +1,13 @@
+requests>=2.31
+beautifulsoup4>=4.12
+lxml>=5.0
+pandas>=2.1
+pyyaml>=6.0
+python-dateutil>=2.9
+yfinance>=0.2.40
+streamlit>=1.36
+# optional but recommended
+playwright>=1.45            # Chittorgarh / IPOJI tables are rendered by JavaScript
+yt-dlp>=2024.8.6            # YouTube search without an API key
+youtube-transcript-api>=0.6 # interview / roadshow transcripts
+pytest>=8

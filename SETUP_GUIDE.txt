@@ -1,0 +1,408 @@
+================================================================================
+ IPO RADAR - COMPLETE SETUP GUIDE (100% ONLINE, 100% FREE)
+ Indian IPO alerts: Mainboard + SME, DRHP/RHP, anchor book, lock-in unlocks,
+ returns, promoter interviews. Runs in the cloud; nothing to install on your PC.
+================================================================================
+
+WHAT YOU WILL END UP WITH
+-------------------------
+  * Telegram alerts on your phone, day and night, without your computer on
+  * A dashboard website, e.g. https://ipo-radar-yourname.streamlit.app
+  * Total cost: Rs 0
+
+HOW IT WORKS
+------------
+  GitHub Actions (free robot)  -- every 30 min on weekdays, full run nightly
+      |  scrapes SEBI, StockScans, NSE, Chittorgarh, YouTube
+      |  scores IPOs, works out lock-in dates, computes returns
+      |  sends alerts ------------------------------------> Telegram / email
+      |  saves the database to a branch called "data"
+      v
+  Streamlit Community Cloud (free website) -- reads "data" every 10 min
+      --> your dashboard link
+
+  Alerts do not depend on the website. If the website is asleep, alerts still come.
+
+TIME NEEDED: about 30-40 minutes, once. Best done on a laptop/desktop browser.
+
+WHAT YOU NEED
+-------------
+  1. A GitHub account                   https://github.com/signup
+  2. Telegram (phone app or web)        https://web.telegram.org
+  3. A Google account (optional, for the YouTube key)
+  4. The file ipo_radar.zip (from the chat)
+
+
+================================================================================
+ PART A - TELEGRAM BOT  (5 minutes)
+================================================================================
+
+A1. In Telegram, search for  @BotFather  (blue tick) and open it.
+A2. Send:  /newbot
+A3. Give it a name, e.g. "My IPO Radar".
+    Give it a username ending in "bot", e.g. "myiporadar_bot".
+A4. BotFather replies with a TOKEN like:
+        7412345678:AAH3xYzAbCdEfGhIjKlMnOpQrStUvWxYz12
+    Copy it and keep it private. This is your TELEGRAM_BOT_TOKEN.
+A5. Open your new bot and send it any message, e.g. "hi".
+A6. In a browser, open (put your token in place of <TOKEN>):
+        https://api.telegram.org/bot<TOKEN>/getUpdates
+    Find  "chat":{"id":123456789  -- that number is your TELEGRAM_CHAT_ID.
+    (If you see "result":[] , send the bot another message and refresh.)
+
+    OPTIONAL: to send alerts to a Telegram CHANNEL instead
+      - create the channel, add your bot as an Administrator
+      - use @yourchannelname as the TELEGRAM_CHAT_ID
+
+
+================================================================================
+ PART B - GITHUB REPOSITORY  (3 minutes)
+================================================================================
+
+B1. Log in to github.com and click  "+"  (top right) -> "New repository".
+B2. Repository name:  ipo-radar
+B3. Select  Private.
+B4. Tick  "Add a README file".
+B5. Click  "Create repository".
+
+
+================================================================================
+ PART C - UPLOAD THE PROJECT USING CODESPACES  (10 minutes)
+================================================================================
+Codespaces is a free computer in your browser. You only need it for setup.
+
+C1. In your ipo-radar repo, click the green  "<> Code"  button
+    -> "Codespaces" tab -> "Create codespace on main".
+    Wait 1-2 minutes. An editor (VS Code) opens in the browser.
+
+C2. Drag  ipo_radar.zip  into the file list on the LEFT side of the editor.
+    (Or right-click the empty area in the file list -> "Upload...")
+
+C3. Click in the TERMINAL at the bottom of the screen and paste these commands
+    (Ctrl+Shift+V to paste in the terminal), then press Enter:
+
+    unzip -q ipo_radar.zip -d /tmp/x && cp -a /tmp/x/ipo_radar/. . && rm ipo_radar.zip
+
+    pip install -r requirements.txt
+
+    sudo env "PATH=$PATH" playwright install --with-deps chromium
+
+    The last two take 2-4 minutes. Wait for the prompt to come back.
+
+C4. Check the tests pass:
+
+    python -m pytest -q
+
+    Expected: "12 passed"
+
+
+================================================================================
+ PART D - TEST IT INSIDE THE CODESPACE  (10 minutes)
+================================================================================
+
+D1. Create your private config:
+
+    cp config.example.yaml config.yaml
+
+D2. Click  config.yaml  in the file list. Find the telegram section and fill in:
+
+      telegram:
+        bot_token: "7412345678:AAH3x..."     <- from A4
+        chat_id: "123456789"                 <- from A6
+
+    Save with Ctrl+S.
+
+D3. Send a test alert:
+
+    python run.py test-alert
+
+    -> "IPO Radar is connected" should arrive on Telegram.
+
+D4. Try the demo data and the dashboard:
+
+    python run.py demo
+    streamlit run dashboard.py
+
+    A popup says "Your application running on port 8501 is available".
+    Click "Open in Browser". Look around, then press Ctrl+C in the terminal to stop.
+
+D5. First live pull from the real websites:
+
+    rm data/ipo_radar.db
+    python run.py sync -v
+
+    It's normal to see some "403" lines for NSE or YouTube, because they block
+    cloud servers. SEBI and StockScans should work.
+    If a source shows a Python error (a "Traceback"), paste it to Claude to fix.
+
+D6. See which alerts it would send:
+
+    python run.py alerts --dry-run
+
+
+================================================================================
+ PART E - SAVE EVERYTHING TO GITHUB  (1 minute)
+================================================================================
+config.yaml (your keys) and the database are NOT uploaded; .gitignore blocks them.
+
+    rm -f data/ipo_radar.db
+    git add .
+    git commit -m "IPO Radar"
+    git push
+
+Refresh your repo page on github.com. You should see folders like ipo_radar/,
+.github/, data/ and files like run.py and dashboard.py.
+
+
+================================================================================
+ PART F - SECRETS AND START THE ROBOT  (5 minutes)
+================================================================================
+
+F1. In the repo on github.com:
+    Settings -> Secrets and variables -> Actions -> "New repository secret"
+
+    Add these one at a time (Name = exactly as written):
+
+      Name                    Value                          Required?
+      ---------------------   ----------------------------   ------------
+      TELEGRAM_BOT_TOKEN      token from A4                  YES
+      TELEGRAM_CHAT_ID        chat id from A6                YES
+      YOUTUBE_API_KEY         key from Part H                recommended
+      WEBHOOK_URLS            Discord/Slack webhook URL(s)   optional
+      SMTP_USER               your Gmail address             optional
+      SMTP_PASSWORD           Gmail App Password             optional
+      EMAIL_TO                where to email alerts          optional
+      ANTHROPIC_API_KEY       Claude API key (paid)          optional
+
+    OPTIONAL watchlist (always alert on these IPOs):
+      Same page -> "Variables" tab -> New variable
+      Name: WATCHLIST     Value: hero-motors,varmora-granito
+      (the slug is the last part of the StockScans URL of the IPO)
+
+F2. Enable workflow permissions:
+    Settings -> Actions -> General -> "Workflow permissions"
+    -> select "Read and write permissions" -> Save.
+
+F3. Start the first run:
+    Actions tab -> if asked, click "I understand my workflows, enable them"
+    -> click "ipo-radar" on the left -> "Run workflow" -> green "Run workflow".
+
+F4. Wait about 5-8 minutes. Click the run to see its log.
+    - Green tick = success. Alerts arrive on Telegram.
+    - In the branch dropdown on the repo's main page, a branch called "data" now exists.
+    - Red cross = open the log, copy the error, and paste it to Claude.
+
+From now on it runs by itself:
+    Quick run : every 30 min, about 08:37-18:07 IST, Monday-Friday
+    Full run  : every day around 20:53 IST (also Chittorgarh, returns, YouTube)
+    GitHub can start runs 5-20 min late at busy times. That's normal.
+
+
+================================================================================
+ PART G - DASHBOARD WEBSITE ON STREAMLIT CLOUD  (5 minutes)
+================================================================================
+
+G1. Create a read-only GitHub token so the website can read your private data:
+    github.com -> your photo (top right) -> Settings -> Developer settings
+    -> Personal access tokens -> Fine-grained tokens -> "Generate new token"
+      Token name:          streamlit-read
+      Expiration:          1 year (put a reminder in your calendar to renew it)
+      Repository access:   Only select repositories -> ipo-radar
+      Permissions:         Repository permissions -> Contents -> Read-only
+    Generate, then copy the token (starts with github_pat_).
+
+G2. Go to https://share.streamlit.io and "Continue with GitHub". Allow access,
+    including private repos if asked.
+
+G3. Click "Create app" -> "Deploy a public app from GitHub" (or "from repo"):
+      Repository:     yourname/ipo-radar
+      Branch:         main
+      Main file path: dashboard.py
+      App URL:        choose one, e.g. ipo-radar-yourname
+
+G4. Click "Advanced settings" -> Secrets, paste (with your values):
+
+      GITHUB_REPO = "yourname/ipo-radar"
+      GITHUB_TOKEN = "github_pat_xxxxxxxxxxxxxxxx"
+
+    Python version: 3.12. Save.
+
+G5. Click "Deploy". The first build takes 3-5 minutes. Bookmark the link
+    on your phone (Share -> Add to Home Screen, and it works like an app).
+
+    Note: the website sleeps after 12 hours with no visitors. Opening the link
+    wakes it in about 30 seconds. Your alerts and data are not affected.
+
+    Privacy: the dashboard URL is public by default. The data is only IPO
+    information, but you can restrict it: Streamlit app -> Settings -> Sharing
+    -> "Only specific people can view this app".
+
+
+================================================================================
+ PART H - YOUTUBE API KEY  (optional but recommended, 5 minutes, free)
+================================================================================
+
+H1. Go to https://console.cloud.google.com and sign in.
+H2. Top bar -> project dropdown -> "New project" -> name "ipo-radar" -> Create.
+H3. Menu -> "APIs & Services" -> "Library" -> search "YouTube Data API v3" -> Enable.
+H4. "APIs & Services" -> "Credentials" -> "Create credentials" -> "API key". Copy it.
+H5. Add it as the secret  YOUTUBE_API_KEY  (Part F1).
+    Free quota: 10,000 units/day; one search costs 100 units. The defaults stay well within that.
+
+
+================================================================================
+ PART I - CLEAN UP THE CODESPACE
+================================================================================
+
+Go to https://github.com/codespaces -> "..." next to your codespace -> Stop
+(or Delete; everything important is already on GitHub). This saves your free hours.
+It also stops by itself after 30 minutes without activity.
+
+
+================================================================================
+ DAY-TO-DAY USE
+================================================================================
+
+  * Alerts arrive on Telegram automatically. Nothing to do.
+  * Open your dashboard link any time to explore.
+  * Small edits (watchlist, alert settings, anchor tiers):
+      open the repo on github.com and press the  .  (full stop) key.
+      This opens a free lightweight editor, no Codespace needed.
+      Edit the file -> Source Control icon on the left -> commit.
+      The next run uses the change.
+  * Useful files to edit:
+      config.example.yaml     alert timing, segments, score weights
+      data/anchor_tiers.yaml  which anchor investors count as quality
+  * Run immediately: Actions -> ipo-radar -> Run workflow.
+  * Pause everything: Actions -> ipo-radar -> "..." -> Disable workflow.
+
+
+================================================================================
+ ALERTS YOU WILL RECEIVE
+================================================================================
+
+  DRHP / RHP     a company filed its draft / red herring prospectus
+  DATES          IPO dates announced (band, size, fresh vs OFS, scores)
+  OPEN / CLOSE   on the day; the close alert includes QIB/NII/retail subscription
+  ALLOTMENT      allotment day
+  ANCHOR         anchor book out, with anchor quality score and reasons
+  LISTING        listing day; LISTED = listing gain and current return
+  UNLOCK         7 days before, 1 day before and on the day each lock-in ends
+                 (anchor 30/90 days, pre-IPO investors, promoters),
+                 with % of equity and the stock's return vs IPO price
+  VIDEO          new promoter interview / roadshow found
+
+  Lock-in rules used:
+    Holder                     Mainboard                  SME
+    Anchor investors           50% @30 days, 50% @90 days  same
+    Pre-IPO non-promoters      6 months                   1 year
+    Promoter holding >20%      6 months (1 yr if capex)   50% @1 yr, 50% @2 yrs
+    Promoter 20% (MPC)         18 months (3 yrs if capex) 3 years
+  All from the allotment date. The RHP's "Capital Structure" chapter is final.
+
+
+================================================================================
+ FREE-TIER LIMITS (why this costs nothing)
+================================================================================
+
+  GitHub Actions   private repo: 2,000 free minutes/month; this uses about 1,100.
+                   Public repo: unlimited. The "keepalive" job stops GitHub
+                   pausing the schedule after 60 days.
+  Codespaces       free monthly hours for personal accounts; setup uses about 1 hour.
+  Streamlit Cloud  free; sleeps after 12 h idle, wakes when opened.
+  YouTube API      free 10,000 units/day.
+  Telegram bots    free.
+
+  To stay safely inside the minutes, keep the repo private and don't make the schedule
+  more frequent than every 30 minutes. If you ever go over, make the repo public
+  (no keys are stored in the code) or reduce the schedule in
+  .github/workflows/ipo-radar.yml.
+
+
+================================================================================
+ TROUBLESHOOTING
+================================================================================
+
+  No Telegram message from test-alert
+    - Did you send your bot a message first (A5)?
+    - Check the chat id is only digits (or @channel) and the token has no spaces.
+
+  Workflow fails at "Save database to data branch" with 403
+    - Part F2 not done: set "Read and write permissions".
+
+  Workflow is red with a Python error
+    - Usually a website changed its layout. Copy the error from the log and paste
+      it to Claude for a parser fix. The other sources keep working meanwhile.
+
+  Dashboard says "Couldn't download data ... data branch"
+    - The first workflow run hasn't finished yet, or
+    - GITHUB_REPO is misspelled (must be "yourname/ipo-radar"), or
+    - GITHUB_TOKEN expired or lacks "Contents: Read-only" on this repo.
+
+  Dashboard is empty
+    - Wait for the first full run (Part F3). Use the Reboot option in
+      Streamlit (bottom-right "Manage app" -> ... -> Reboot).
+
+  "403" for nseindia.com or YouTube in the logs
+    - Normal. They block cloud servers. SEBI and StockScans cover filings and the
+      calendar. Add YOUTUBE_API_KEY for videos.
+
+  Alerts stopped after ~2 months
+    - Actions tab -> ipo-radar -> "Enable workflow". (The keepalive job should
+      prevent this.)
+
+  Streamlit token expired (after 1 year)
+    - Repeat G1, then update GITHUB_TOKEN in Streamlit -> Settings -> Secrets.
+
+
+================================================================================
+ FILES IN THE PROJECT
+================================================================================
+
+  SETUP_GUIDE.txt                 this guide
+  README.md                       what the project does, scoring explained
+  DEPLOY.md                       deployment notes (incl. Oracle free VM option)
+  requirements.txt                Python packages
+  config.example.yaml             all settings (copied to config.yaml)
+  run.py                          commands: demo, sync, alerts, watch, ipo, test-alert
+  dashboard.py                    the dashboard website
+  .github/workflows/ipo-radar.yml the free scheduler (GitHub Actions)
+  .streamlit/config.toml          dashboard colours
+  .gitignore                      keeps config.yaml and cache out of GitHub
+  scripts/ci_config.py            builds config.yaml from GitHub secrets
+  data/anchor_tiers.yaml          anchor investor quality tiers (editable)
+  ipo_radar/
+    db.py                         database (SQLite)
+    utils.py                      web fetching + number/date parsing
+    pipeline.py                   runs every step, merges sources
+    lockin.py                     unlock timeline (SEBI rules)
+    scoring.py                    company quality, anchor quality, pre-IPO markups
+    returns.py                    returns since IPO/listing, unlock price impact
+    alerts.py                     alert rules, Telegram/email/webhook sending
+    demo.py                       sample data snapshot (18-Sep-2026)
+    sources/stockscans.py         StockScans lists, filings, detail pages
+    sources/chittorgarh.py        Chittorgarh + IPOJI
+    sources/regulators.py         SEBI filings, NSE issue calendar
+    sources/youtube.py            interviews, roadshows, transcripts
+    sources/rendered.py           browser helper for JavaScript pages
+  tests/test_core.py              automated checks (run: python -m pytest -q)
+
+
+================================================================================
+ COMMAND CHEAT-SHEET (inside a Codespace terminal)
+================================================================================
+
+  python run.py test-alert              send a test message
+  python run.py demo                    load sample data
+  python run.py sync                    pull live data from all sources
+  python run.py sync --steps lists      only refresh the IPO lists
+  python run.py alerts --dry-run        show alerts without sending
+  python run.py alerts                  send new alerts
+  python run.py ipo hero-motors         everything known about one IPO
+  streamlit run dashboard.py            open the dashboard
+  python -m pytest -q                   run the checks
+
+
+This is a research tool, not investment advice. Check the offer document
+(RHP) before acting on any score or alert.
+================================================================================

@@ -1,0 +1,80 @@
+# Free, always-on scheduler for IPO Radar.
+# The database lives on a separate `data` branch that is force-pushed as ONE commit each run,
+# so the repository never grows no matter how long this runs.
+name: ipo-radar
+on:
+  schedule:
+    - cron: "7,37 3-12 * * 1-5"   # quick run every 30 min, ~08:37-18:07 IST, Mon-Fri
+    - cron: "23 15 * * *"         # full run daily ~20:53 IST (filings, Chittorgarh, returns, videos)
+  workflow_dispatch:              # "Run workflow" button = full run
+concurrency:
+  group: ipo-radar
+  cancel-in-progress: false
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FULL_RUN: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '23 15 * * *' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - name: Install browser (full run only)
+        if: env.FULL_RUN == 'true'
+        run: playwright install --with-deps chromium
+
+      - name: Restore database from data branch
+        run: |
+          mkdir -p data
+          if git fetch -q origin data --depth=1; then
+            git show origin/data:ipo_radar.db > data/ipo_radar.db && echo "restored $(du -h data/ipo_radar.db | cut -f1)"
+          else
+            echo "No data branch yet (first run)"
+          fi
+
+      - name: Write config
+        run: python scripts/ci_config.py
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WEBHOOK_URLS: ${{ secrets.WEBHOOK_URLS }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WATCHLIST: ${{ vars.WATCHLIST }}
+
+      - name: Sync and alert
+        run: |
+          if [ "$FULL_RUN" = "true" ]; then
+            python run.py sync
+          else
+            python run.py sync --steps lists details compute
+          fi
+          python run.py alerts
+
+      - name: Save database to data branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -s data/ipo_radar.db ] || exit 0
+          mkdir -p /tmp/pub && cp data/ipo_radar.db /tmp/pub/ && cd /tmp/pub
+          git init -q -b data
+          git add ipo_radar.db
+          git -c user.name=ipo-radar-bot -c user.email=bot@users.noreply.github.com commit -qm "data $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+
+  keepalive:   # stops GitHub disabling the schedule after 60 days without commits to main
+    runs-on: ubuntu-latest
+    permissions: { actions: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gautamkrishnar/keepalive-workflow@v2
