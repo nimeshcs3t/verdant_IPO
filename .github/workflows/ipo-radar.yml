@@ -72,7 +72,7 @@ jobs:
           git -c user.name=ipo-radar-bot -c user.email=bot@users.noreply.github.com commit -qm "data $(date -u +%FT%TZ)"
           git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
 
-       keepalive:   # re-enables this workflow so GitHub never pauses the schedule after 60 quiet days
+         keepalive:   # re-enables this workflow so GitHub never pauses the schedule after 60 quiet days
        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '23 15 * * *'
        runs-on: ubuntu-latest
        permissions: { actions: write }
