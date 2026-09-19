@@ -74,7 +74,7 @@ jobs:
 
   keepalive:   # stops GitHub disabling the schedule after 60 days without commits to main
     runs-on: ubuntu-latest
-    permissions: { actions: write }
+    permissions: { actions: write , contents: read}
     steps:
       - uses: actions/checkout@v4
       - uses: gautamkrishnar/keepalive-workflow@v2
